@@ -32,6 +32,9 @@ class Productos {
         doc.splice(producto.id-1, 1)
         fs.writeFileSync("./zapas.txt", JSON.stringify(doc), ()=>{console.log("borrado");})
     }
+    deleteAll(){
+        fs.writeFileSync(`./zapas.txt`, "[]", ()=>{console.log("listo")})
+    }
 }
 const zapas = new Productos("zapas")
 zapas.save({name: "af1", price: 482})
@@ -39,4 +42,6 @@ zapas.save({name: "yeezy", price: 749})
 console.log(zapas.getById(2))
 console.log(zapas.getAll())
 zapas.deleteById(1)
+console.log(zapas.getAll())
+zapas.deleteAll()
 console.log(zapas.getAll())
