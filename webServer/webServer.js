@@ -1,10 +1,21 @@
-const fs = require("fs")
+const fs = require("fs");
+const express = require("express");
+const app = express();
+const PORT = 8080
+app.get("/", ((_, res)=>{
+    res.send("<h1>Hola</h1>")
+}))
+const server = app.listen(PORT, ()=>console.log(`server online in port ${PORT}`))
 let path
+const productos = [
+    {name: "af1", price: 482, thumbnail: "foto1", id: 1},
+    {name: "yeezy", price: 782, thumbnail: "foto2", id: 2},
+    {name: "nizza", price: 275, thumbnail: "foto3", id: 3} 
+]
 
 class Productos {
-    constructor(nombre){
-        fs.writeFileSync(`./${nombre}.txt`, "[]", ()=>{console.log("listo")})
-        path = `./${nombre}.txt`
+    constructor(){  
+        let doc = fs.readFileSync(`./zapas.txt`, "utf-8", ()=>{console.log("ok")})
     }
     save(producto){
         let doc = fs.readFileSync(`./zapas.txt`, "utf-8", ()=>{console.log("ok")})       
@@ -22,8 +33,8 @@ class Productos {
     }
     getAll(){
         let doc = fs.readFileSync(`./zapas.txt`, "utf-8", ()=>{console.log("ok")})
-        doc = JSON.parse(doc)
-        return doc
+        let docPar = JSON.parse(doc)
+        return docPar
     }
     deleteById(id){
         let doc = fs.readFileSync(`./zapas.txt`, "utf-8", ()=>{console.log("ok")})
@@ -35,19 +46,19 @@ class Productos {
     deleteAll(){
         fs.writeFileSync(`./zapas.txt`, "[]", ()=>{console.log("listo")})
     }
+    random(){
+        let doc = fs.readFileSync(`./zapas.txt`, "utf-8", ()=>{console.log("ok")})
+        let docPar = JSON.parse(doc)
+        let num = Math.round(Math.random() *( docPar.length - 1))
+        return docPar[num]
+    }
 }
-const zapas = new Productos("zapas")
-zapas.save({name: "af1", price: 482})
-zapas.save({name: "yeezy", price: 749})
-console.log(zapas.getById(2))
-console.log(zapas.getAll())
-zapas.deleteById(1)
-console.log(zapas.getAll())
-zapas.deleteAll()
-console.log(zapas.getAll())
 
-const prods = [
-    {name: "af1", price: 482, thumbnail: "foto1", id: 1},
-    {name: "yeezy", price: 782, thumbnail: "foto2", id: 2},
-    {name: "nizza", price: 275, thumbnail: "foto3", id: 3} 
-]
+const zapas = new Productos()
+
+app.get("/productos", ((_, res)=>{
+    res.send(`<p>${JSON.stringify(zapas.getAll())}</p>`)
+}))
+app.get("/productoRandom", ((_, res)=>{
+    res.send(`<p>${JSON.stringify(zapas.random())}</p>`)
+}))

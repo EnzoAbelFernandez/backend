@@ -26,10 +26,11 @@ class Usuario {
     }
 }
 
-let enzo = new Usuario("Enzo", "Fernández", [{nombre: "Harry Potter", autor: "J.K. Rowling"}], ["Eros", "Mara", "Fito"])
-console.log(enzo.getFullName())
-enzo.addBook("asdasd", "ajajaja")
-console.log(enzo.getBookNames())
-console.log(enzo.countMascotas())
-enzo.addMascota("Iris")
-console.log(enzo.countMascotas())
+const asd = [
+    {name: "af1", price: 482, thumbnail: "foto1", id: 1},
+    {name: "yeezy", price: 782, thumbnail: "foto2", id: 2},
+    {name: "nizza", price: 275, thumbnail: "foto3", id: 3} 
+]
+
+let asdPar = JSON.stringify(asd)
+console.log(asdPar);
