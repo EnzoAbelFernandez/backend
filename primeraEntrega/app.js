@@ -6,7 +6,7 @@ const fs = require("fs")
 
 const admin = true
 
-const products = JSON.parse(fs.readFileSync("./products.txt"))
+const carts = JSON.parse(fs.readFileSync("./products.txt"))
 
 const getId = (arr) => {
     if (arr[arr.length - 1]){
@@ -42,7 +42,7 @@ productsRouter.get("/:id", (req, res)=>{
     const products = read("./products.txt")
     if (!products.find((prod)=>prod.id == num)){
         res.status(404)
-        res.json({error: "producto no encontrado"})
+        res.json({error: 404, descripcion: "producto no encontrado"})
         return
     }
     res.json(products.find((prod)=>prod.id == num))
@@ -55,7 +55,7 @@ productsRouter.post("/", (req, res)=>{
         res.json(productToAdd)
     } else {
         res.status(403)
-        res.send(`Error 403: ${req.method} "${req.path}" no autorizado`)
+        res.json({error: 403, descripcion: `ruta ${req.path} metodo "${req.method}" no autorizado`})
     }
 })
 productsRouter.put("/:id", (req, res)=>{
@@ -65,7 +65,7 @@ productsRouter.put("/:id", (req, res)=>{
         const products = read("./products.txt")
         if (!products.find((prod)=>prod.id == num)){
             res.status(404)
-            res.json({error: "producto no encontrado"})
+            res.json({error: 404, descripcion: "producto no encontrado"})
             return
         }
         const index = products.findIndex((prod)=>prod.id == num)
@@ -77,7 +77,7 @@ productsRouter.put("/:id", (req, res)=>{
         res.json({actualizado: updated})
     } else {
         res.status(403)
-        res.send(`Error 403: ${req.method} "${req.path}" no autorizado`)
+        res.json({error: 403, descripcion: `ruta ${req.path} metodo "${req.method}" no autorizado`})
     }
 })
 productsRouter.delete("/:id", (req, res)=>{
@@ -85,7 +85,8 @@ productsRouter.delete("/:id", (req, res)=>{
         const num = req.params.id
         const products = read("./products.txt")
         if (!products.find((prod)=>prod.id == num)){
-            res.json({error: "producto no encontrado"})
+            res.status(404)
+            res.json({error: 404, descripcion: "producto no encontrado"})
             return
         }
         const index = products.findIndex((prod)=>prod.id == num)
@@ -95,53 +96,76 @@ productsRouter.delete("/:id", (req, res)=>{
         res.json({deleted: deletedProduct})
     } else {
         res.status(403)
-        res.send(`Error 403: ${req.method} "${req.path}" no autorizado`)
+        res.json({error: 403, descripcion: `ruta ${req.path} metodo "${req.method}" no autorizado`})
     }
 })
 
 const cartRouter = Router()
 app.use("/api/carrito", cartRouter)
 
-cartRouter.get("/", (_, res)=>{
-    res.json({hola: "hola"})
-})
 cartRouter.post("/", (req, res)=>{
+    const carts = read("./carts.txt")
     const time = Date.now()
-    const cartProducts = req.body
-    const newCart = {id: getId(products), timeStamp: new Date(time).toLocaleString(), products: cartProducts}
-    products.push(newCart)
+    const cartProducts = req.body[0] ? req.body : []
+    const newCart = {id: getId(carts), timeStamp: new Date(time).toLocaleString(), products: cartProducts}
+    write("./carts.txt", newCart)    
     res.json({ cartID: newCart.id })
 })
 cartRouter.delete("/:id", (req, res)=>{
+    const carts = read("./carts.txt")
     const num = req.params.id
-    if (!products.find((cart)=>cart.id == num)){
-        res.json({error: "carrito no encontrado"})
+    if (!carts.find((cart)=>cart.id == num)){
+        res.status(404)
+        res.json({error: 404, descripcion: "carrito no encontrado"})
         return
     }
-    const index = products.findIndex((cart)=>cart.id == num)
-    products.splice(index, 1)
+    const index = carts.findIndex((cart)=>cart.id == num)
+    carts.splice(index, 1)
+    write("./carts.txt", carts, true)
     res.send(`Carrito con id:${num} eliminado.`)
 })
 cartRouter.get("/:id/productos", (req, res)=>{
+    const carts = read("./carts.txt")
     const num = req.params.id
-    const index = products.findIndex((cart)=>cart.id == num)
-    res.json(products[index].products)
+    if (!carts.find((cart)=>cart.id == num)){
+        res.status(404)
+        res.json({error: 404, descripcion: "carrito no encontrado"})
+        return
+    }
+    const index = carts.findIndex((cart)=>cart.id == num)
+    res.json(carts[index].products)
 })
-cartRouter.post("/:id/productos", (req, res)=>{
-    const num = req.params.id
-    const productToAdd = req.body
-    const index = products.findIndex((cart)=>cart.id == num)
-    products[index].products.push(productToAdd)
+cartRouter.post("/:id/productos/:id_prod", (req, res)=>{
+    const carts = read("./carts.txt")
+    const products = read("./products.txt")
+    const cartID = req.params.id
+    const prodID = req.params.id_prod
+    if (!carts.find((cart)=>cart.id == cartID)){
+        res.status(404)
+        res.json({error: 404, descripcion: "carrito no encontrado"})
+        return
+    }
+    if (!products.find((prod)=>prod.id == prodID)){
+        res.status(404)
+        res.json({error: 404, descripcion: "producto no encontrado"})
+        return
+    }
+    const cartIndex = carts.findIndex((cart)=>cart.id == cartID)
+    const prodIndex = products.findIndex((prod)=>prod.id == prodID)
+    const productToAdd = products[prodIndex]
+    carts[cartIndex].products.push(products[prodIndex])
+    write("./carts.txt", carts, true)
     res.send(`${productToAdd} añadido`)
 })
 cartRouter.delete("/:id/productos/:id_prod", (req, res)=>{
+    const products = read("./products.txt")
+    const carts = read("./carts.txt")
     const cartID = req.params.id
     const prodID = req.params.id_prod
-    const cartIndex = products.findIndex((cart)=>cart.id == cartID)
-    const prodIndex = products[cartIndex].products.findIndex((prod)=>prod.id == prodID)
-    const eliminatedProduct = products[cartIndex].products[prodIndex]
-    console.log(products)
-    products[cartIndex].products.splice(prodIndex, 1)
+    const cartIndex = carts.findIndex((cart)=>cart.id == cartID)
+    const prodIndex = carts[cartIndex].products.findIndex((prod)=>prod.id == prodID)
+    const eliminatedProduct = carts[cartIndex].products[prodIndex]
+    carts[cartIndex].products.splice(prodIndex, 1)
+    write("./carts.txt", carts, true)
     res.json({eliminado: eliminatedProduct})
-    console.log(products)
 })
